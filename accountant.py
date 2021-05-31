@@ -1,8 +1,8 @@
 from typing import Dict, List
 
 ALLOWED_COMMANDS = ('payment', 'sale', 'purchase', 'account', 'warehouse', 'history', 'stop')
-input_string = ''
-input_list = []
+# input_string = ''
+# input_list = []
 
 
 class Product:
@@ -22,6 +22,7 @@ class Warehouse:
 
     def check_if_in_stock(self):
         pass
+
 
 class Account:
     def __init__(self):
@@ -95,24 +96,36 @@ while True:
                             if stock_product.number >= input_product.number:
                                 stock_product.number -= input_product.number  # subtracting number of sold products from warehouse
                                 my_account.balance += input_product.price * input_product.number  # adding income
+                                # print(f'debug print in sale mode: account balance: {my_account.balance}, '
+                                      # f'input product number: {input_product.number}'
+                                      # f'input product price: {input_product.price}')
                                # !!!!! don't forget to add sale to the account history
                             else:
                                 print(f'Error - out of stock')
                                 continue  # try again
                             if stock_product.number == 0:  # if after the sale the number of items is zero, we remove the product
-                                my_warehouse.products.remove(stock_product)
+                                my_warehouse.products.remove(stock_product)  # is it right????????????
                         else:
                             print(f'Not in offer! Pick another product')
                             continue  # try again...
                 elif command == 'purchase':
                     my_account.balance -= input_product.price * input_product.number  # subtracting the expense
                     # !!!!! don't forget to add the expense to the account history
-                    for stock_product in my_warehouse.products:
-                        if input_product.name == stock_product.name:
-                            stock_product.number += input_product.number  # adding number of purchased products to warehouse
-                        else:
-                            my_warehouse.products.append(input_product)  # adding purchased products to warehouse
-
+                    # print(f"debug print in purchase, account balance: {my_account.balance}")
+                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!LOOK BELOW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    if my_warehouse.products:  # if there are any items in this list
+                        for stock_product in my_warehouse.products:  # the problem is here - the loop doesnt even start as
+                            # there are no element in this list yet. should i use a set instead?
+                            # how do i check if the product is there and if it is not - add it?
+                            if input_product.name == stock_product.name:
+                                stock_product.number += input_product.number  # adding number of purchased products to warehouse
+                            else:
+                                my_warehouse.products.append(input_product)  # adding purchased products to warehouse
+                            # print(f'debug print in purchase mode: account balance: {my_account.balance}, '
+                                  # f'input product number: {input_product.number}'
+                                  # f'input product price: {input_product.price}')
+                    else:  # if this is the first item
+                        my_warehouse.products.append(input_product)
             else:
                 print('Error - price and number must be positive.')
                 continue  # try again
