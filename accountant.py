@@ -1,11 +1,60 @@
+from typing import Dict, List
 
 ALLOWED_COMMANDS = ('payment', 'sale', 'purchase', 'account', 'warehouse', 'history', 'stop')
-actions = {}  # an empty dictionary for saving all command lines: key - action_counter, value - input_list
+# history = {}  # an empty dictionary for saving all command lines: key - action_counter, value - input_list
 action_counter = 0  # number of actions given by the user
 account_balance = 0
 account_history = {}  # key - account change, value - comment
-warehouse = {}  # dictionary for magazine balance: key - product, value - stock status
+warehouse = {}  # dictionary for warehouse status: key - product, value - stock status
 input_string = ''
+input_list = []
+
+
+class Product:
+    def __init__(self, nm, pr, nb):
+        self.name = nm  # unikalna
+        self.price = pr  # cena jednego
+        self.number = nb  # ile mamy na stanie
+
+    def __str__(self):
+        return f'{self.name}: {self.number}'
+
+
+class Warehouse:
+    def __init__(self):
+        self.products = []  # this will be the new list for warehouse status
+        # tutaj wczytujemy dane z pliku o produktach
+
+    def check_if_in_stock(self):
+        pass
+
+class Account:
+    def __init__(self):
+        self.balance = 0
+        self.account_history = []
+
+    # def read_account(self):
+        # with open("account.txt", "a") as file:  # otwieramy plik do odczytu
+            # self.balance = file.readline()
+
+    def show_account_balance(self):
+        print(f'Current account balance is {self.balance}.')
+        self.account_history.append(f'Show balance: {self.balance}')
+
+    def add_payment(self, local_input_list):
+        # payment_amount = int(input("Amount: "))  # int
+        # comment = input("Comment: ")  # str
+        payment_amount = int(local_input_list[1])
+        comment = local_input_list[2]
+        self.balance += payment_amount  # update account balance
+        self.account_history.append(f'payment: {payment_amount}, {comment}')
+
+
+# def show_history():
+    # print('All actions performed:')
+    # for number, action in history.items():
+       # print(number, action)
+
 
 print("Hello! Welcome to our online magazine tracker! \n "
       "You can now make some actions on your account. \n"
@@ -16,30 +65,34 @@ print("Hello! Welcome to our online magazine tracker! \n "
       f"4. To preview your account balance: {ALLOWED_COMMANDS[3]}\n"
       f"5. To preview stock status of chosen products: {ALLOWED_COMMANDS[4]} <product1> <product2> etc.\n"
       f"6. To see account history: {ALLOWED_COMMANDS[5]}\n"
-      f"When you are done with updates, type {ALLOWED_COMMANDS[6]} to proceed to summary.")
+      f"When you are done with updates, type {ALLOWED_COMMANDS[6]} to proceed to summary.")  # Welcome message
+
+my_account = Account()
+my_warehouse = Warehouse()
+# my_product = Product()
 
 # actions
-while input_string != 'stop':
-    input_string = input("Write action: ")  # get input
+while True:
+    input_string = input("Write action: ")  # get input - tego nie ma sensu wydzielać
     if not input_string:
         break
     input_list = input_string.split()
     command = input_list[0]
     action_counter += 1  # number of line will be the key of a dict
-    actions[action_counter] = input_list  # current command line is saved
+    # history[action_counter] = input_list  # current command line is saved
     if command in ALLOWED_COMMANDS:
         if command == 'payment':  # entering payment mode
             if len(input_list) < 3:  # if not enough parameters given
                 continue
-            account_change = int(input_list[1])  # int
-            comment = input_list[2]  # str
-            account_balance += account_change  # update account balance
+            my_account.add_payment(input_list)
+            # account_change = int(input_list[1])  # int
+            # comment = input_list[2]  # str
+            # account_balance += account_change  # update account balance
         elif command == 'account':
-            print(f'Current account balance is {account_balance}.')
+            # print(f'Current account balance is {account_balance}.')
+            my_account.show_account_balance()
         elif command == 'history':
-            print(f'Account history')
-            for change, comment in account_history.items():
-                print(change, comment)
+            print(my_account.account_history)
             # OR:
             # print('All actions performed:')
             # for number, action in actions.items():
@@ -47,41 +100,44 @@ while input_string != 'stop':
         elif input_list[0] == 'warehouse':
             print(f'Stock status:')
             for product in input_list[1:]:
-                if product in warehouse:
-                    print(f'{product}: {warehouse[product]}')
+                if product in my_warehouse.products:
+                    print(product)
                 else:
-                    print(f'Product {product} not in magazine.')
+                    print(f'Product not in offer.')
         elif command == 'stop':
             break
         else:
             if len(input_list) < 4:  # if not enough parameters given
                 continue
-            product_id = input_list[1]  # str
-            price = int(input_list[2])  # int
-            number = int(input_list[3])  # int
-            if price > 0 and number > 0:  # price and number must be positive
+            input_product = Product(input_list[1], int(input_list[2]), int(input_list[3]))  # str
+            # my_product.price = int(input_list[2])  # int
+            # my_product.number = int(input_list[3])  # int
+            if input_product.price > 0 and input_product.number > 0:  # price and number must be positive
                 if command == 'sale':
-                    if product_id in warehouse:
-                        if warehouse[product_id] >= number:
-                            warehouse[product_id] -= number  # subtracting number of sold products from the magazine
-                            account_balance += price * number  # adding income
-                            account_history[price] = 'sale'  # adding comment to the account change
+                    for stock_product in my_warehouse.products:  # !!! musimy lecieć pętlą po wszystkich i tak naprawdę
+                                        # w całej pętli if wykona się tylko raz, tam, gdzie name się zgadza
+                        if input_product.name == stock_product.name: # sprawdzam, czy wpisana nazwa jest w magazynie
+                            if stock_product.number >= input_product.number:
+                                stock_product.number -= input_product.number  # subtracting number of sold products from warehouse
+                                my_account.balance += input_product.price * input_product.number  # adding income
+                               # !!!!! don't forget to add sale to the account history
+                            else:
+                                print(f'Error - out of stock')
+                                continue  # try again
+                            if stock_product.number == 0:  # if after the sale the number of items is zero, we remove the product
+                                my_warehouse.products.remove(stock_product)
                         else:
-                            print(f'Error - out of stock')
-                            continue  # try again
-                        if warehouse[product_id] == 0:
-                            del warehouse[product_id]
-                    else:
-                        print(f'Not in offer! Pick another product')
-                        continue  # try again...
+                            print(f'Not in offer! Pick another product')
+                            continue  # try again...
                 elif command == 'purchase':
-                    account_balance -= price * number  # subtracting the expense
-                    account_history[price] = 'purchase'  # adding the expense to account history
-                    if product_id in warehouse:
-                        warehouse[product_id] += number  # adding number of purchased products to the magazine
-                        # print(f'Magazine: {product_id}: number - {magazine[product_id]}, last added - {number}')
-                    else:
-                        warehouse[product_id] = number  # adding purchased products to the magazine
+                    my_account.balance -= input_product.price * input_product.number  # subtracting the expense
+                    # !!!!! don't forget to add the expense to the account history
+                    for stock_product in my_warehouse.products:
+                        if input_product.name == stock_product.name:
+                            stock_product.number += input_product.number  # adding number of purchased products to warehouse
+                        else:
+                            my_warehouse.products.append(input_product)  # adding purchased products to warehouse
+
             else:
                 print('Error - price and number must be positive.')
                 continue  # try again
