@@ -1,11 +1,6 @@
 from typing import Dict, List
 
 ALLOWED_COMMANDS = ('payment', 'sale', 'purchase', 'account', 'warehouse', 'history', 'stop')
-# history = {}  # an empty dictionary for saving all command lines: key - action_counter, value - input_list
-action_counter = 0  # number of actions given by the user
-account_balance = 0
-account_history = {}  # key - account change, value - comment
-warehouse = {}  # dictionary for warehouse status: key - product, value - stock status
 input_string = ''
 input_list = []
 
@@ -42,18 +37,10 @@ class Account:
         self.account_history.append(f'Show balance: {self.balance}')
 
     def add_payment(self, local_input_list):
-        # payment_amount = int(input("Amount: "))  # int
-        # comment = input("Comment: ")  # str
         payment_amount = int(local_input_list[1])
         comment = local_input_list[2]
         self.balance += payment_amount  # update account balance
         self.account_history.append(f'payment: {payment_amount}, {comment}')
-
-
-# def show_history():
-    # print('All actions performed:')
-    # for number, action in history.items():
-       # print(number, action)
 
 
 print("Hello! Welcome to our online magazine tracker! \n "
@@ -78,25 +65,15 @@ while True:
         break
     input_list = input_string.split()
     command = input_list[0]
-    action_counter += 1  # number of line will be the key of a dict
-    # history[action_counter] = input_list  # current command line is saved
     if command in ALLOWED_COMMANDS:
         if command == 'payment':  # entering payment mode
             if len(input_list) < 3:  # if not enough parameters given
                 continue
             my_account.add_payment(input_list)
-            # account_change = int(input_list[1])  # int
-            # comment = input_list[2]  # str
-            # account_balance += account_change  # update account balance
         elif command == 'account':
-            # print(f'Current account balance is {account_balance}.')
             my_account.show_account_balance()
         elif command == 'history':
             print(my_account.account_history)
-            # OR:
-            # print('All actions performed:')
-            # for number, action in actions.items():
-                # print(number, action)
         elif input_list[0] == 'warehouse':
             print(f'Stock status:')
             for product in input_list[1:]:
@@ -109,9 +86,7 @@ while True:
         else:
             if len(input_list) < 4:  # if not enough parameters given
                 continue
-            input_product = Product(input_list[1], int(input_list[2]), int(input_list[3]))  # str
-            # my_product.price = int(input_list[2])  # int
-            # my_product.number = int(input_list[3])  # int
+            input_product = Product(input_list[1], int(input_list[2]), int(input_list[3]))
             if input_product.price > 0 and input_product.number > 0:  # price and number must be positive
                 if command == 'sale':
                     for stock_product in my_warehouse.products:  # !!! musimy lecieć pętlą po wszystkich i tak naprawdę
