@@ -6,9 +6,9 @@ ALLOWED_COMMANDS = ('payment', 'sale', 'purchase', 'account', 'warehouse', 'hist
 
 
 class Product:
-    def __init__(self, nm, pr, nb):
+    def __init__(self, nm, nb):
         self.name = nm  # unikalna
-        self.price = pr  # cena jednego
+        # self.price = pr  # cena jednego
         self.number = nb  # ile mamy na stanie
 
     def __str__(self):
@@ -16,13 +16,35 @@ class Product:
 
 
 class Warehouse:
-    def __init__(self):
-        self.products = []  # this will be the new list for warehouse status
+    def __init__(self, acnt):
+        self.products = {}  # warehouse status - key - name, value - Product
+        self.account = acnt
         # tutaj wczytujemy dane z pliku o produktach
 
-    def check_if_in_stock(self):
-        pass
+    def add_product(self, product, price):  # najpierw piszemy logikę w klasach, potem zajmujemy się wywołaniami
+        if not self.account.update_balance(-price * product.number):  # jeśli nie mamy tyle pieniędzy, to zwraca False
+            return False  # metody wykonują się też w ifie, jeśli robię test!!!!!!!!!!!!
+                            # czyli update_balance się wykona jeśli to będzie możliwe!!!!!
+        if product.name in self.products:
+            self.products[product.name].number += product.number
+        else:
+            self.products[product.name] = product
+        self.account.account_history.append(f'Purchase: {product.name}, {price}, {product.number}')
+        return True
 
+    def remove_product(self, product, price):
+        if product.name not in self.products:
+            return False  # tu nie trzymamy komunikatu o błędzie - to w wywołaniu funkcji dopiero, tu nie ma komunikacji
+        if self.products[product.name].number < product.number:
+            return False  # early return - lepiej najpierw obsłuzyć błędy, potem juz wchodzi do prawidłowego działania
+                            # to dobrze wpływa na formatowanie i wygląd kodu i czytelność
+        # ta metoda zwraca false, jak nie mamy tyle produktów
+        self.products[product.name].number -= product.number
+        self.account.update_balance(price * product.number)
+        # self.account.balance += product.number * price - nie działam bezpośrednio na atrybucie, bo nie sprawdzam
+        # wtedy, czy operacja ma sens. lepiej do tego zrobić metodę.
+        self.account.account_history.append(f'Sale: {product.name}, {price}, {product.number}')
+        return True
 
 class Account:
     def __init__(self):
@@ -40,9 +62,14 @@ class Account:
     def add_payment(self, local_input_list):
         payment_amount = int(local_input_list[1])
         comment = local_input_list[2]
-        self.balance += payment_amount  # update account balance
+        self.update_balance(payment_amount)  # update account balance
         self.account_history.append(f'payment: {payment_amount}, {comment}')
 
+    def update_balance(self, amount):  # amount can be negative
+        if self.balance + amount < 0:
+            return False
+        self.balance += amount
+        return True
 
 print("Hello! Welcome to our online magazine tracker! \n "
       "You can now make some actions on your account. \n"
@@ -56,8 +83,7 @@ print("Hello! Welcome to our online magazine tracker! \n "
       f"When you are done with updates, type {ALLOWED_COMMANDS[6]} to proceed to summary.")  # Welcome message
 
 my_account = Account()
-my_warehouse = Warehouse()
-# my_product = Product()
+my_warehouse = Warehouse(my_account)
 
 # actions
 while True:
@@ -66,71 +92,48 @@ while True:
         break
     input_list = input_string.split()
     command = input_list[0]
-    if command in ALLOWED_COMMANDS:
-        if command == 'payment':  # entering payment mode
-            if len(input_list) < 3:  # if not enough parameters given
-                continue
-            my_account.add_payment(input_list)
-        elif command == 'account':
-            my_account.show_account_balance()
-        elif command == 'history':
-            print(my_account.account_history)
-        elif input_list[0] == 'warehouse':
-            print(f'Stock status:')
-            for product in input_list[1:]:
-                if product in my_warehouse.products:
-                    print(product)
-                else:
-                    print(f'Product not in offer.')
-        elif command == 'stop':
-            break
-        else:
-            if len(input_list) < 4:  # if not enough parameters given
-                continue
-            input_product = Product(input_list[1], int(input_list[2]), int(input_list[3]))
-            if input_product.price > 0 and input_product.number > 0:  # price and number must be positive
-                if command == 'sale':
-                    for stock_product in my_warehouse.products:  # !!! musimy lecieć pętlą po wszystkich i tak naprawdę
-                                        # w całej pętli if wykona się tylko raz, tam, gdzie name się zgadza
-                        if input_product.name == stock_product.name: # sprawdzam, czy wpisana nazwa jest w magazynie
-                            if stock_product.number >= input_product.number:
-                                stock_product.number -= input_product.number  # subtracting number of sold products from warehouse
-                                my_account.balance += input_product.price * input_product.number  # adding income
-                                # print(f'debug print in sale mode: account balance: {my_account.balance}, '
-                                      # f'input product number: {input_product.number}'
-                                      # f'input product price: {input_product.price}')
-                               # !!!!! don't forget to add sale to the account history
-                            else:
-                                print(f'Error - out of stock')
-                                continue  # try again
-                            if stock_product.number == 0:  # if after the sale the number of items is zero, we remove the product
-                                my_warehouse.products.remove(stock_product)  # is it right????????????
-                        else:
-                            print(f'Not in offer! Pick another product')
-                            continue  # try again...
-                elif command == 'purchase':
-                    my_account.balance -= input_product.price * input_product.number  # subtracting the expense
-                    # !!!!! don't forget to add the expense to the account history
-                    # print(f"debug print in purchase, account balance: {my_account.balance}")
-                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!LOOK BELOW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    if my_warehouse.products:  # if there are any items in this list
-                        for stock_product in my_warehouse.products:  # the problem is here - the loop doesnt even start as
-                            # there are no element in this list yet. should i use a set instead?
-                            # how do i check if the product is there and if it is not - add it?
-                            if input_product.name == stock_product.name:
-                                stock_product.number += input_product.number  # adding number of purchased products to warehouse
-                            else:
-                                my_warehouse.products.append(input_product)  # adding purchased products to warehouse
-                            # print(f'debug print in purchase mode: account balance: {my_account.balance}, '
-                                  # f'input product number: {input_product.number}'
-                                  # f'input product price: {input_product.price}')
-                    else:  # if this is the first item
-                        my_warehouse.products.append(input_product)
-            else:
-                print('Error - price and number must be positive.')
-                continue  # try again
-    else:
+    if command == 'stop':
+        break
+    if command not in ALLOWED_COMMANDS:
         print(f'Please write one of allowed commands: {ALLOWED_COMMANDS}')
+        continue
+    if command == 'payment':  # entering payment mode
+        if len(input_list) >= 3:  # if not enough parameters given
+            my_account.add_payment(input_list)
+        continue
+    if command == 'account':
+        my_account.show_account_balance()
+        continue
+    if command == 'history':
+        print(my_account.account_history)
+        continue
+    if command == 'warehouse':  #obadaj czy można wrzucić do metody to
+        print(f'Stock status:')
+        for product in input_list[1:]:
+            if product in my_warehouse.products:
+                print(product)
+            else:
+                print(f'Product not in offer.')
+        continue
+    if len(input_list) < 4:  # if not enough parameters given
+        continue
+    input_product = Product(input_list[1], int(input_list[3]))
+    product_price = int(input_list[2])
+    if product_price < 0 or input_product.number < 0:  # price and number must be positive
+        print('Error - price and number must be positive.')
+        continue  # try again
+    if command == 'sale':
+        # zamiast wykonywać metodę ja robię test z jej wykorzystaniem. to zadziała jak wykonanie + test: 2w1
+        if not my_warehouse.remove_product(input_product, product_price):  #gdy nie udało się odjąć produktu
+            print(f'Error - out of stock')
+        continue
+    if command == 'purchase':
+        if not my_warehouse.add_product(input_product, product_price):  #gdy nie udało się odjąć produktu
+            print(f'Error - not enough money!!!!!!!!!!!!!')
+        continue
+
+
+
 
 
 
