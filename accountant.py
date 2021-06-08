@@ -14,37 +14,48 @@ class Product:
     def __str__(self):
         return f'{self.name}: {self.number}'
 
+    def __repr__(self):
+        return f'{self.name}: {self.number}'
+
 
 class Warehouse:
-    def __init__(self, acnt):
+    def __init__(self, local_account):
         self.products = {}  # warehouse status - key - name, value - Product
-        self.account = acnt
+        self.account = local_account
         # tutaj wczytujemy dane z pliku o produktach
 
-    def add_product(self, product, price):  # najpierw piszemy logikę w klasach, potem zajmujemy się wywołaniami
-        if not self.account.update_balance(-price * product.number):  # jeśli nie mamy tyle pieniędzy, to zwraca False
+    def add_product(self, local_product, price):  # najpierw piszemy logikę w klasach, potem zajmujemy się wywołaniami
+        if not self.account.update_balance(-price * local_product.number):  # jeśli nie mamy tyle pieniędzy, to zwraca False
             return False  # metody wykonują się też w ifie, jeśli robię test!!!!!!!!!!!!
                             # czyli update_balance się wykona jeśli to będzie możliwe!!!!!
-        if product.name in self.products:
-            self.products[product.name].number += product.number
+        if local_product.name in self.products:
+            self.products[local_product.name].number += local_product.number
         else:
-            self.products[product.name] = product
-        self.account.account_history.append(f'Purchase: {product.name}, {price}, {product.number}')
+            self.products[local_product.name] = local_product
+        self.account.account_history.append(f'Purchase: {local_product.name}, {price}, {local_product.number}')
         return True
 
-    def remove_product(self, product, price):
-        if product.name not in self.products:
+    def remove_product(self, local_product, price):
+        if local_product.name not in self.products:
             return False  # tu nie trzymamy komunikatu o błędzie - to w wywołaniu funkcji dopiero, tu nie ma komunikacji
-        if self.products[product.name].number < product.number:
+        if self.products[local_product.name].number < local_product.number:
             return False  # early return - lepiej najpierw obsłuzyć błędy, potem juz wchodzi do prawidłowego działania
                             # to dobrze wpływa na formatowanie i wygląd kodu i czytelność
         # ta metoda zwraca false, jak nie mamy tyle produktów
-        self.products[product.name].number -= product.number
-        self.account.update_balance(price * product.number)
+        self.products[local_product.name].number -= local_product.number
+        self.account.update_balance(price * local_product.number)
         # self.account.balance += product.number * price - nie działam bezpośrednio na atrybucie, bo nie sprawdzam
         # wtedy, czy operacja ma sens. lepiej do tego zrobić metodę.
-        self.account.account_history.append(f'Sale: {product.name}, {price}, {product.number}')
+        self.account.account_history.append(f'Sale: {local_product.name}, {price}, {local_product.number}')
         return True
+
+    def show_products(self, local_input):
+        for product_name in local_input:
+            if product_name not in self.products:
+                print(f'Product: {product_name} not in offer.')
+            else:
+                print(f'Product: {product_name} - in stock: {self.products[product_name].number}')
+
 
 class Account:
     def __init__(self):
@@ -70,6 +81,7 @@ class Account:
             return False
         self.balance += amount
         return True
+
 
 print("Hello! Welcome to our online magazine tracker! \n "
       "You can now make some actions on your account. \n"
@@ -98,7 +110,7 @@ while True:
         print(f'Please write one of allowed commands: {ALLOWED_COMMANDS}')
         continue
     if command == 'payment':  # entering payment mode
-        if len(input_list) >= 3:  # if not enough parameters given
+        if len(input_list) >= 3:  # if enough parameters given
             my_account.add_payment(input_list)
         continue
     if command == 'account':
@@ -107,28 +119,24 @@ while True:
     if command == 'history':
         print(my_account.account_history)
         continue
-    if command == 'warehouse':  #obadaj czy można wrzucić do metody to
+    if command == 'warehouse':
         print(f'Stock status:')
-        for product in input_list[1:]:
-            if product in my_warehouse.products:
-                print(product)
-            else:
-                print(f'Product not in offer.')
+        my_warehouse.show_products(input_list[1:])
         continue
     if len(input_list) < 4:  # if not enough parameters given
         continue
-    input_product = Product(input_list[1], int(input_list[3]))
+    input_product = Product(input_list[1], int(input_list[3]))  # adding product with its name and number
     product_price = int(input_list[2])
     if product_price < 0 or input_product.number < 0:  # price and number must be positive
         print('Error - price and number must be positive.')
         continue  # try again
     if command == 'sale':
         # zamiast wykonywać metodę ja robię test z jej wykorzystaniem. to zadziała jak wykonanie + test: 2w1
-        if not my_warehouse.remove_product(input_product, product_price):  #gdy nie udało się odjąć produktu
+        if not my_warehouse.remove_product(input_product, product_price):  # gdy nie udało się odjąć produktu
             print(f'Error - out of stock')
         continue
     if command == 'purchase':
-        if not my_warehouse.add_product(input_product, product_price):  #gdy nie udało się odjąć produktu
+        if not my_warehouse.add_product(input_product, product_price):  # gdy nie udało się kupić produktu
             print(f'Error - not enough money!!!!!!!!!!!!!')
         continue
 
