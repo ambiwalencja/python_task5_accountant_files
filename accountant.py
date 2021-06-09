@@ -1,20 +1,14 @@
 from typing import Dict, List
 
 ALLOWED_COMMANDS = ('payment', 'sale', 'purchase', 'account', 'warehouse', 'history', 'stop')
-# input_string = ''
-# input_list = []
 
 
 class Product:
     def __init__(self, nm, nb):
         self.name = nm  # unikalna
-        # self.price = pr  # cena jednego
         self.number = nb  # ile mamy na stanie
 
     def __str__(self):
-        return f'{self.name}: {self.number}'
-
-    def __repr__(self):
         return f'{self.name}: {self.number}'
 
 
@@ -22,12 +16,18 @@ class Warehouse:
     def __init__(self, local_account):
         self.products = {}  # warehouse status - key - name, value - Product
         self.account = local_account
-        # tutaj wczytujemy dane z pliku o produktach
+        self.read_warehouse()
 
-    def add_product(self, local_product, price):  # najpierw piszemy logikę w klasach, potem zajmujemy się wywołaniami
-        if not self.account.update_balance(-price * local_product.number):  # jeśli nie mamy tyle pieniędzy, to zwraca False
-            return False  # metody wykonują się też w ifie, jeśli robię test!!!!!!!!!!!!
-                            # czyli update_balance się wykona jeśli to będzie możliwe!!!!!
+    def read_warehouse(self):
+        with open("warehouse.txt", "r") as file:  # otwieramy plik do odczytu
+            for line in file.readlines():
+                current_line = line.split(",")
+                self.products[current_line[0]] = Product(current_line[0], current_line[1])  # dodajemy kolejne procukty
+
+    # purchase
+    def add_product(self, local_product, price):
+        if not self.account.update_balance(-price * local_product.number):  # jeśli nie mamy tyle pieniędzy
+            return False
         if local_product.name in self.products:
             self.products[local_product.name].number += local_product.number
         else:
@@ -35,20 +35,18 @@ class Warehouse:
         self.account.account_history.append(f'Purchase: {local_product.name}, {price}, {local_product.number}')
         return True
 
+    # sale
     def remove_product(self, local_product, price):
         if local_product.name not in self.products:
-            return False  # tu nie trzymamy komunikatu o błędzie - to w wywołaniu funkcji dopiero, tu nie ma komunikacji
+            return False
         if self.products[local_product.name].number < local_product.number:
-            return False  # early return - lepiej najpierw obsłuzyć błędy, potem juz wchodzi do prawidłowego działania
-                            # to dobrze wpływa na formatowanie i wygląd kodu i czytelność
-        # ta metoda zwraca false, jak nie mamy tyle produktów
+            return False
         self.products[local_product.name].number -= local_product.number
         self.account.update_balance(price * local_product.number)
-        # self.account.balance += product.number * price - nie działam bezpośrednio na atrybucie, bo nie sprawdzam
-        # wtedy, czy operacja ma sens. lepiej do tego zrobić metodę.
         self.account.account_history.append(f'Sale: {local_product.name}, {price}, {local_product.number}')
         return True
 
+    # warehouse
     def show_products(self, local_input):
         for product_name in local_input:
             if product_name not in self.products:
@@ -61,21 +59,25 @@ class Account:
     def __init__(self):
         self.balance = 0
         self.account_history = []
+        self.read_account()
 
-    # def read_account(self):
-        # with open("account.txt", "a") as file:  # otwieramy plik do odczytu
-            # self.balance = file.readline()
+    def read_account(self):
+        with open("account.txt", "r") as file:  # otwieramy plik do odczytu
+            self.balance = file.readline()
 
+    # account
     def show_account_balance(self):
         print(f'Current account balance is {self.balance}.')
         self.account_history.append(f'Show balance: {self.balance}')
 
+    # payment
     def add_payment(self, local_input_list):
         payment_amount = int(local_input_list[1])
         comment = local_input_list[2]
         self.update_balance(payment_amount)  # update account balance
         self.account_history.append(f'payment: {payment_amount}, {comment}')
 
+    # sale, purchase, payment
     def update_balance(self, amount):  # amount can be negative
         if self.balance + amount < 0:
             return False
@@ -131,13 +133,12 @@ while True:
         print('Error - price and number must be positive.')
         continue  # try again
     if command == 'sale':
-        # zamiast wykonywać metodę ja robię test z jej wykorzystaniem. to zadziała jak wykonanie + test: 2w1
         if not my_warehouse.remove_product(input_product, product_price):  # gdy nie udało się odjąć produktu
             print(f'Error - out of stock')
         continue
     if command == 'purchase':
         if not my_warehouse.add_product(input_product, product_price):  # gdy nie udało się kupić produktu
-            print(f'Error - not enough money!!!!!!!!!!!!!')
+            print(f'Error - not enough money!')
         continue
 
 
