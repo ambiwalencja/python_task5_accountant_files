@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 ALLOWED_COMMANDS = ('payment', 'sale', 'purchase', 'account', 'warehouse', 'history', 'stop')
 
 
@@ -18,7 +16,7 @@ class Warehouse:
         self.account = local_account
         self.read_warehouse()  # tworząc obiekt wywołujemy metodę czytającą z pliku,
                                 # zapisującą dane do słownika produktów
-        self.read_history()  # i tak samo z historią, też ją ładujemy od razu
+        # self.read_history()  # i tak samo z historią, też ją ładujemy od razu
 
     def read_warehouse(self):
         with open("warehouse.txt", "r") as file:  # otwieramy plik do odczytu
@@ -75,6 +73,7 @@ class Warehouse:
         with open("history.txt", "a") as file:  # tutaj nadpisujemy, nie zapisujemy od nowa
             for action in self.account.account_history:
                 file.write(action + "\n")
+            # file.write(self.account.account_history[-1])
 
 
 class Account:
@@ -94,8 +93,8 @@ class Account:
 
     # payment
     def add_payment(self, local_input_list):
-        payment_amount = int(local_input_list[1])
-        comment = local_input_list[2]
+        payment_amount = int(local_input_list[0])
+        comment = local_input_list[1:]
         self.update_balance(payment_amount)  # update account balance
         self.account_history.append(f'payment: {payment_amount}, {comment}')
 
@@ -125,52 +124,50 @@ class Account:
 my_account = Account()
 my_warehouse = Warehouse(my_account)
 
-print(my_account.account_history)
-
-# actions
-while True:
-    input_string = input("Write action: ")  # get input - tego nie ma sensu wydzielać
-    if not input_string:
-        break
-    input_list = input_string.split()
-    command = input_list[0]
-    if command == 'stop':
-        my_warehouse.save_stock()  # zapisuję stan magazynu do pliku
-        my_warehouse.save_history()  # zapisuję wykonane akcje
-        my_account.save_account()  # zapisuję stan konta
-        break
-    if command not in ALLOWED_COMMANDS:
-        print(f'Please write one of allowed commands: {ALLOWED_COMMANDS}')
-        continue
-    if command == 'payment':  # entering payment mode
-        if len(input_list) >= 3:  # if enough parameters given
-            my_account.add_payment(input_list)
-        continue
-    if command == 'account':
-        my_account.show_account_balance()
-        continue
-    if command == 'history':
-        print(my_account.account_history)
-        continue
-    if command == 'warehouse':
-        print(f'Stock status:')
-        my_warehouse.show_products(input_list[1:])
-        continue
-    if len(input_list) < 4:  # if not enough parameters given
-        continue
-    input_product = Product(input_list[1], int(input_list[3]))  # adding product with its name and number
-    product_price = int(input_list[2])
-    if product_price < 0 or input_product.number < 0:  # price and number must be positive
-        print('Error - price and number must be positive.')
-        continue  # try again
-    if command == 'sale':
-        if not my_warehouse.remove_product(input_product, product_price):  # gdy nie udało się odjąć produktu
-            print(f'Error - out of stock')
-        continue
-    if command == 'purchase':
-        if not my_warehouse.add_product(input_product, product_price):  # gdy nie udało się kupić produktu
-            print(f'Error - not enough money!')
-        continue
+# # actions
+# while True:
+#     input_string = input("Write action: ")  # get input - tego nie ma sensu wydzielać
+#     if not input_string:
+#         break
+#     input_list = input_string.split()
+#     command = input_list[0]
+#     if command == 'stop':
+#         my_warehouse.save_stock()  # zapisuję stan magazynu do pliku
+#         my_warehouse.save_history()  # zapisuję wykonane akcje
+#         my_account.save_account()  # zapisuję stan konta
+#         break
+#     if command not in ALLOWED_COMMANDS:
+#         print(f'Please write one of allowed commands: {ALLOWED_COMMANDS}')
+#         continue
+#     if command == 'payment':  # entering payment mode
+#         if len(input_list) >= 3:  # if enough parameters given
+#             my_account.add_payment(input_list)
+#         continue
+#     if command == 'account':
+#         my_account.show_account_balance()
+#         continue
+#     if command == 'history':
+#         print(my_account.account_history)
+#         continue
+#     if command == 'warehouse':
+#         print(f'Stock status:')
+#         my_warehouse.show_products(input_list[1:])
+#         continue
+#     if len(input_list) < 4:  # if not enough parameters given
+#         continue
+#     input_product = Product(input_list[1], int(input_list[3]))  # adding product with its name and number
+#     product_price = int(input_list[2])
+#     if product_price < 0 or input_product.number < 0:  # price and number must be positive
+#         print('Error - price and number must be positive.')
+#         continue  # try again
+#     if command == 'sale':
+#         if not my_warehouse.remove_product(input_product, product_price):  # gdy nie udało się odjąć produktu
+#             print(f'Error - out of stock')
+#         continue
+#     if command == 'purchase':
+#         if not my_warehouse.add_product(input_product, product_price):  # gdy nie udało się kupić produktu
+#             print(f'Error - not enough money!')
+#         continue
 
 
 
