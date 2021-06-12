@@ -18,12 +18,13 @@ class Warehouse:
         self.account = local_account
         self.read_warehouse()  # tworząc obiekt wywołujemy metodę czytającą z pliku,
                                 # zapisującą dane do słownika produktów
+        self.read_history()  # i tak samo z historią, też ją ładujemy od razu
 
     def read_warehouse(self):
         with open("warehouse.txt", "r") as file:  # otwieramy plik do odczytu
             for line in file.readlines():
                 current_line = line.split(",")
-                self.products[current_line[0]] = Product(current_line[0], current_line[1])
+                self.products[current_line[0]] = Product(current_line[0], int(current_line[1].split("\n")[0]))
                 # dodajemy kolejne produkty
 
     def read_history(self):
@@ -110,21 +111,21 @@ class Account:
             file.write(str(self.balance))
 
 
-print("Hello! Welcome to our online magazine tracker! \n "
-      "You can now make some actions on your account. \n"
-      f"To perform an action type as follows:\n"
-      f"1. To record a payment: {ALLOWED_COMMANDS[0]} <amount in gr> <comment> \n"
-      f"2. To note a sale: {ALLOWED_COMMANDS[1]} <product> <price> <number>\n"
-      f"3. To note a purchase: {ALLOWED_COMMANDS[2]} <product> <price> <number>\n"
-      f"4. To preview your account balance: {ALLOWED_COMMANDS[3]}\n"
-      f"5. To preview stock status of chosen products: {ALLOWED_COMMANDS[4]} <product1> <product2> etc.\n"
-      f"6. To see account history: {ALLOWED_COMMANDS[5]}\n"
-      f"When you are done with updates, type {ALLOWED_COMMANDS[6]} to proceed to summary.")  # Welcome message
+# print("Hello! Welcome to our online magazine tracker! \n "
+#       "You can now make some actions on your account. \n"
+#       f"To perform an action type as follows:\n"
+#       f"1. To record a payment: {ALLOWED_COMMANDS[0]} <amount in gr> <comment> \n"
+#       f"2. To note a sale: {ALLOWED_COMMANDS[1]} <product> <price> <number>\n"
+#       f"3. To note a purchase: {ALLOWED_COMMANDS[2]} <product> <price> <number>\n"
+#       f"4. To preview your account balance: {ALLOWED_COMMANDS[3]}\n"
+#       f"5. To preview stock status of chosen products: {ALLOWED_COMMANDS[4]} <product1> <product2> etc.\n"
+#       f"6. To see account history: {ALLOWED_COMMANDS[5]}\n"
+#       f"When you are done with updates, type {ALLOWED_COMMANDS[6]} to proceed to summary.")  # Welcome message
 
 my_account = Account()
 my_warehouse = Warehouse(my_account)
 
-print(my_warehouse.products.items())
+print(my_account.account_history)
 
 # actions
 while True:
