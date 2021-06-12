@@ -16,13 +16,20 @@ class Warehouse:
     def __init__(self, local_account):
         self.products = {}  # warehouse status - key - name, value - Product
         self.account = local_account
-        self.read_warehouse()
+        self.read_warehouse()  # tworząc obiekt wywołujemy metodę czytającą z pliku,
+                                # zapisującą dane do słownika produktów
 
     def read_warehouse(self):
         with open("warehouse.txt", "r") as file:  # otwieramy plik do odczytu
             for line in file.readlines():
                 current_line = line.split(",")
-                self.products[current_line[0]] = Product(current_line[0], current_line[1])  # dodajemy kolejne procukty
+                self.products[current_line[0]] = Product(current_line[0], current_line[1])
+                # dodajemy kolejne produkty
+
+    def read_history(self):
+        with open("history.txt", "r") as file:
+            for line in file.readlines():
+                self.account.account_history.append(line)
 
     # purchase
     def add_product(self, local_product, price):
@@ -53,6 +60,20 @@ class Warehouse:
                 print(f'Product: {product_name} not in offer.')
             else:
                 print(f'Product: {product_name} - in stock: {self.products[product_name].number}')
+        self.account.account_history.append(f'Stock status for: {local_input}')
+
+    def save_stock(self):
+        last_product = list(self.products.keys())[-1]
+        with open("warehouse.txt", "w") as file:
+            for name, product in self.products.items():
+                file.write(name + "," + str(product.number))
+                if name != last_product:
+                    file.write("\n")
+
+    def save_history(self):
+        with open("history.txt", "a") as file:  # tutaj nadpisujemy, nie zapisujemy od nowa
+            for action in self.account.account_history:
+                file.write(action + "\n")
 
 
 class Account:
@@ -63,7 +84,7 @@ class Account:
 
     def read_account(self):
         with open("account.txt", "r") as file:  # otwieramy plik do odczytu
-            self.balance = file.readline()
+            self.balance = int(file.readline())
 
     # account
     def show_account_balance(self):
@@ -84,6 +105,10 @@ class Account:
         self.balance += amount
         return True
 
+    def save_account(self):
+        with open("account.txt", "w") as file:  # otwieramy plik do zapisu
+            file.write(str(self.balance))
+
 
 print("Hello! Welcome to our online magazine tracker! \n "
       "You can now make some actions on your account. \n"
@@ -99,6 +124,8 @@ print("Hello! Welcome to our online magazine tracker! \n "
 my_account = Account()
 my_warehouse = Warehouse(my_account)
 
+print(my_warehouse.products.items())
+
 # actions
 while True:
     input_string = input("Write action: ")  # get input - tego nie ma sensu wydzielać
@@ -107,6 +134,9 @@ while True:
     input_list = input_string.split()
     command = input_list[0]
     if command == 'stop':
+        my_warehouse.save_stock()  # zapisuję stan magazynu do pliku
+        my_warehouse.save_history()  # zapisuję wykonane akcje
+        my_account.save_account()  # zapisuję stan konta
         break
     if command not in ALLOWED_COMMANDS:
         print(f'Please write one of allowed commands: {ALLOWED_COMMANDS}')
